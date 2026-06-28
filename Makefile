@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS =
+CXXFLAGS = -Wall -Wextra -O2
 BIN = bin
 
 .PHONY: all solution run_tests clean
