@@ -18,14 +18,14 @@ int main() {
       std::cerr << "Failed to open file input.txt: " << std::strerror(errno)
                 << "\n"
                 << "Exiting\n";
-      return 1;
+      _exit(1);
     }
     int outputFileFd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (outputFileFd < 0) {
       std::cerr << "Failed to open file output.txt: " << std::strerror(errno)
                 << "\n"
                 << "Exiting\n";
-      return 1;
+      _exit(1);
     }
 
     if (dup2(inputFileFd, STDIN_FILENO) == -1 ||
@@ -49,10 +49,26 @@ int main() {
     auto start = std::chrono::steady_clock::now();
 
     while (true) {
-      pid_t ret = waitpid(pid, nullptr, WNOHANG);
+      int status;
+      pid_t ret = waitpid(pid, &status, WNOHANG);
+      if (ret == -1) {
+          std::cerr << "waitpid failed: " << std::strerror(errno) << '\n';
+          return 1;
+      }
       if (ret == pid) {
+        if (WIFSIGNALED(status)) {
+          int sig = WTERMSIG(status);
+          std::cerr << "Got RTE: " << sig << "\n";
+          return 1;
+        }
+        if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+          std::cerr << "Runtime Error (exit code " << WEXITSTATUS(status)
+                    << ")\n";
+          return 1;
+        }
         break;
       }
+
       auto elapsed = std::chrono::steady_clock::now() - start;
       if (elapsed >= std::chrono::seconds(TIMEOUT)) {
         kill(pid, SIGKILL);
@@ -60,7 +76,7 @@ int main() {
         std::cout << "Time Limit Exceeded.\n";
         return 1;
       }
-      usleep(100000); // Sleep 100 ms
+      usleep(100000);
     }
     execl("/usr/bin/delta", "delta", "--side-by-side", "output.txt",
           "expected_output.txt", nullptr);
