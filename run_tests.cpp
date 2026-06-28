@@ -58,7 +58,7 @@ int main() {
       if (ret == pid) {
         if (WIFSIGNALED(status)) {
           int sig = WTERMSIG(status);
-          std::cerr << "Got RTE: " << sig << "\n";
+          std::cerr << "Got RTE: " << strsignal(sig) << " (signal " << sig << ")\n";;
           return 1;
         }
         if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
