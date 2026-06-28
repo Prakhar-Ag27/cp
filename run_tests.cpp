@@ -62,7 +62,6 @@ int main() {
       }
       usleep(100000); // Sleep 100 ms
     }
-    std::cout << "Comparing answer\n";
     execl("/usr/bin/delta", "delta", "--side-by-side", "output.txt",
           "expected_output.txt", nullptr);
     std::cerr << "Failed to execute delta: " << std::strerror(errno) << '\n';
